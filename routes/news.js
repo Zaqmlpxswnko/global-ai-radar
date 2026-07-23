@@ -1,46 +1,53 @@
 const express = require("express");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const Groq = require("groq-sdk");
 
 const router = express.Router();
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
 
 router.get("/", async (req, res) => {
-    try {
-        const model = genAI.getGenerativeModel({
-            model: "gemini-3-flash-preview"
-        });
-
-        const prompt = `
+  try {
+    const prompt = `
 Give me the latest AI breakthroughs from the past 24 hours.
 
-Return ONLY JSON like this:
+Return ONLY valid JSON in this format:
 
 [
-{
-"title":"",
-"lab":"",
-"category":"",
-"region":"",
-"score":"",
-"desc":"",
-"significance":""
-}
+  {
+    "title":"",
+    "lab":"",
+    "category":"",
+    "region":"",
+    "score":"",
+    "desc":"",
+    "significance":""
+  }
 ]
 `;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      temperature: 0.2,
+    });
 
-        const text = response.text();
-     res.json(JSON.parse(text));
+    const text = completion.choices[0].message.content;
 
-    } catch (err) {
-        console.error(err);
-        res.status(500).send({
-            error: err.message
-        });
-    }
+    res.json(JSON.parse(text));
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: err.message,
+    });
+  }
 });
 
 module.exports = router;
