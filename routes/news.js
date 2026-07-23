@@ -1,53 +1,28 @@
 const express = require("express");
-const Groq = require("groq-sdk");
+const fs = require("fs");
+const path = require("path");
 
 const router = express.Router();
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+router.get("/", (req, res) => {
 
-router.get("/", async (req, res) => {
-  try {
-    const prompt = `
-Give me the latest AI breakthroughs from the past 24 hours.
+    try {
 
-Return ONLY valid JSON in this format:
+        const data = fs.readFileSync(
+            path.join(__dirname, "../PUBLIC/news.json"),
+            "utf8"
+        );
 
-[
-  {
-    "title":"",
-    "lab":"",
-    "category":"",
-    "region":"",
-    "score":"",
-    "desc":"",
-    "significance":""
-  }
-]
-`;
+        res.json(JSON.parse(data));
 
-    const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.2,
-    });
+    } catch (err) {
 
-    const text = completion.choices[0].message.content;
+        res.status(500).json({
+            error: "News cache unavailable"
+        });
 
-    res.json(JSON.parse(text));
+    }
 
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({
-      error: err.message,
-    });
-  }
 });
 
 module.exports = router;

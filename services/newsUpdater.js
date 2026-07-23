@@ -1,36 +1,98 @@
+const fs = require("fs");
+const path = require("path");
+const cron = require("node-cron");
 const Parser = require("rss-parser");
+const Groq = require("groq-sdk");
 
 const parser = new Parser();
 
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
+
+const NEWS_FILE = path.join(__dirname, "../PUBLIC/news.json");
+
 const feeds = [
-  "https://openai.com/news/rss.xml",
   "https://huggingface.co/blog/feed.xml",
-  "https://venturebeat.com/category/ai/feed/",
-  "https://techcrunch.com/category/artificial-intelligence/feed/"
+  "https://techcrunch.com/category/artificial-intelligence/feed/",
+  "https://venturebeat.com/category/ai/feed/"
 ];
 
-async function fetchNews() {
-  let articles = [];
+async function updateNews() {
+  console.log("Updating AI news...");
 
-  for (const feed of feeds) {
-    try {
-      const rss = await parser.parseURL(feed);
+  try {
+    let articles = [];
 
-      rss.items.slice(0, 5).forEach(item => {
-        articles.push({
-          title: item.title,
-          link: item.link,
-          description: item.contentSnippet || item.content || "",
-          date: item.pubDate
+    for (const feed of feeds) {
+      try {
+        const rss = await parser.parseURL(feed);
+
+        rss.items.slice(0, 3).forEach(item => {
+          articles.push({
+            title: item.title,
+            description: item.contentSnippet || item.content || "",
+            source: rss.title
+          });
         });
-      });
 
-    } catch (e) {
-      console.log("RSS failed:", feed);
+      } catch (e) {
+        console.log("RSS failed:", feed);
+      }
     }
-  }
 
-  return articles;
+    const prompt = `
+Summarize these AI news articles.
+
+Return ONLY JSON.
+
+Format:
+
+[
+{
+"title":"",
+"lab":"",
+"category":"",
+"region":"",
+"score":"",
+"desc":"",
+"significance":""
+}
+]
+
+Articles:
+
+${JSON.stringify(articles)}
+`;
+
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.2
+    });
+
+    let text = completion.choices[0].message.content;
+
+    text = text.replace(/```json|```/g, "").trim();
+
+    fs.writeFileSync(NEWS_FILE, text);
+
+    console.log("News cache updated.");
+
+  } catch (err) {
+    console.error(err);
+  }
 }
 
-module.exports = { fetchNews };
+// Run immediately
+updateNews();
+
+// Then every 30 minutes
+cron.schedule("*/30 * * * *", updateNews);
+
+module.exports = { updateNews };
