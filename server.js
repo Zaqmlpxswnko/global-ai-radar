@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 require("dotenv").config();
-require("./services/cacheNews");
+require("./services/newsUpdater");
 const newsRoute = require("./routes/news");
 
 const app = express();
