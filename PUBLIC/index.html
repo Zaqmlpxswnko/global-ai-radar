@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global AI Radar - Live Hourly Breakthrough Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#040711',
+                        cardbg: 'rgba(10, 16, 32, 0.75)',
+                        neonCyan: '#00f2fe',
+                        neonPurple: '#9d4edd',
+                        neonEmerald: '#10b981',
+                        neonRose: '#ff007f',
+                        neonAmber: '#f59e0b'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                        display: ['Space Grotesk', 'sans-serif']
+                    },
+                    animation: {
+                        'pulse-glow': 'pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'radar-sweep': 'radarSweep 4s linear infinite',
+                        'float': 'float 5s ease-in-out infinite'
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { opacity: '1', boxShadow: '0 0 15px rgba(0, 242, 254, 0.3)' },
+                            '50%': { opacity: '0.6', boxShadow: '0 0 35px rgba(0, 242, 254, 0.8)' }
+                        },
+                        radarSweep: {
+                            '0%': { transform: 'rotate(0deg)' },
+                            '100%': { transform: 'rotate(360deg)' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-6px)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Chart.js for data analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #040711;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        .font-display {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #070d1e;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00f2fe;
+        }
+
+        .glass-panel {
+            background: rgba(10, 16, 32, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+        }
+
+        .glass-panel-glow {
+            background: rgba(10, 16, 32, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 242, 254, 0.25);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.15);
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 10px #10b981;
+            animation: pulseDot 1.5s infinite;
+        }
+
+        @keyframes pulseDot {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+
+            70% {
+                transform: scale(1.3);
+                box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        .feed-item {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .feed-item:hover {
+            transform: translateX(4px);
+            border-color: rgba(0, 242, 254, 0.5);
+        }
+
+        .radar-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 1rem;
+        }
+
+        .radar-sweep-beam {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            background: conic-gradient(from 0deg, rgba(0, 242, 254, 0.25) 0deg, transparent 60deg, transparent 360deg);
+            transform-origin: 0% 0%;
+            animation: radarSweep 6s linear infinite;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col justify-between relative text-gray-100">
+
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Header / Navigation Bar -->
+    <header
+        class="relative z-20 w-full px-4 sm:px-8 py-4 glass-panel border-b border-slate-800 flex flex-wrap justify-between items-center gap-4">
+        <div class="flex items-center space-x-3">
+            <div
+                class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 animate-pulse-glow">
+                <i class="fa-solid fa-satellite-dish text-xl text-white"></i>
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <h1
+                        class="font-display font-extrabold text-xl tracking-tight bg-gradient-to-r from-cyan-400 via-white to-purple-400 bg-clip-text text-transparent">
+                        GLOBAL AI RADAR
+                    </h1>
+                    <span
+                        class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-500/40">HOURLY
+                        LIVE</span>
+                </div>
+                <p class="text-xs text-slate-400 font-mono flex items-center gap-2">
+                    <span class="live-dot"></span>
+                    <span>MONITORING 140+ AI RESEARCH LABS & FRONTIER HUBS</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Global Time & Next Hourly Pulse Widget -->
+        <div class="flex items-center space-x-6 glass-panel px-4 py-2 rounded-xl border border-slate-800">
+            <div class="text-right">
+                <div class="text-[10px] font-mono text-slate-400 uppercase">UTC Global Time</div>
+                <div class="text-sm font-mono font-bold text-cyan-300" id="utc-clock">00:00:00 UTC</div>
+            </div>
+            <div class="h-8 w-px bg-slate-800"></div>
+            <div class="text-left">
+                <div class="text-[10px] font-mono text-slate-400 uppercase">Next Hourly Scan In</div>
+                <div class="text-sm font-mono font-bold text-emerald-400 flex items-center space-x-1">
+                    <i class="fa-solid fa-hourglass-half text-xs animate-spin" style="animation-duration: 10s"></i>
+                    <span id="countdown-timer">59:59</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Controls -->
+        <div class="flex items-center space-x-2 sm:space-x-3 flex-wrap gap-y-2">
+            <button onclick="fetchLiveGeminiBreakthroughs()" id="btn-fetch-live"
+                class="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-bold shadow-lg shadow-cyan-500/20 transition transform active:scale-95">
+                <i class="fa-solid fa-arrows-rotate" id="refresh-icon"></i>
+                <span id="fetch-btn-label">Fetch Live Web Breakthroughs</span>
+            </button>
+
+            <button onclick="toggleAgentModal()"
+                class="px-3 py-2 rounded-xl bg-purple-900/60 hover:bg-purple-800 border border-purple-500/40 text-purple-200 text-xs font-mono transition flex items-center space-x-2">
+                <i class="fa-solid fa-robot text-purple-400"></i>
+                <span>Ask Radar Agent</span>
+            </button>
+
+            <button onclick="generateGeminiStudioBrief()" id="btn-studio-tts"
+                class="px-3 py-2 rounded-xl bg-emerald-900/60 hover:bg-emerald-800 border border-emerald-500/40 text-emerald-200 text-xs font-mono transition flex items-center space-x-2">
+                <i class="fa-solid fa-wand-magic-sparkles text-emerald-400" id="studio-tts-icon"></i>
+                <span id="studio-tts-label">Gemini Studio Voice</span>
+            </button>
+
+            <button onclick="toggleForecastModal()"
+                class="px-3 py-2 rounded-xl bg-amber-900/60 hover:bg-amber-800 border border-amber-500/40 text-amber-200 text-xs font-mono transition flex items-center space-x-2">
+                <i class="fa-solid fa-crystal-ball text-amber-400"></i>
+                <span>Predict Horizon</span>
+            </button>
+
+            <button onclick="toggleGlobalAudio()" id="btn-narrate"
+                class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-mono transition flex items-center space-x-2">
+                <i class="fa-solid fa-volume-high" id="audio-icon"></i>
+                <span id="audio-label">Browser Voice</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="relative z-10 flex-grow p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
+
+        <!-- Metrics Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="glass-panel p-4 rounded-xl border border-cyan-500/30 flex items-center justify-between">
+                <div>
+                    <div class="text-xs font-mono text-slate-400">24H BREAKTHROUGHS</div>
+                    <div class="text-2xl font-display font-extrabold text-cyan-400 mt-1" id="metric-count">2 Events
+                    </div>
+                    <div class="text-[10px] font-mono text-emerald-400 mt-0.5"><i
+                            class="fa-solid fa-arrow-trend-up"></i> Live Tracking Active</div>
+                </div>
+                <div
+                    class="w-10 h-10 rounded-lg bg-cyan-950/80 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
+                    <i class="fa-solid fa-bolt text-lg"></i>
+                </div>
+            </div>
+
+            <div class="glass-panel p-4 rounded-xl border border-purple-500/30 flex items-center justify-between">
+                <div>
+                    <div class="text-xs font-mono text-slate-400">TOP ACTIVE REGION</div>
+                    <div class="text-xl font-display font-bold text-purple-300 mt-1">North America / EU</div>
+                    <div class="text-[10px] font-mono text-slate-400 mt-0.5">Silicon Valley &amp; Oxford Hubs</div>
+                </div>
+                <div
+                    class="w-10 h-10 rounded-lg bg-purple-950/80 border border-purple-500/40 flex items-center justify-center text-purple-400">
+                    <i class="fa-solid fa-earth-americas text-lg"></i>
+                </div>
+            </div>
+
+            <div class="glass-panel p-4 rounded-xl border border-emerald-500/30 flex items-center justify-between">
+                <div>
+                    <div class="text-xs font-mono text-slate-400">HIGHEST IMPACT DOMAIN</div>
+                    <div class="text-xl font-display font-bold text-emerald-300 mt-1">Biotech &amp; AGI</div>
+                    <div class="text-[10px] font-mono text-emerald-400 mt-0.5">AGI Index Score: 9.8/10</div>
+                </div>
+                <div
+                    class="w-10 h-10 rounded-lg bg-emerald-950/80 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                    <i class="fa-solid fa-dna text-lg"></i>
+                </div>
+            </div>
+
+            <div class="glass-panel p-4 rounded-xl border border-rose-500/30 flex items-center justify-between">
+                <div>
+                    <div class="text-xs font-mono text-slate-400">FRONTIER MODEL VELOCITY</div>
+                    <div class="text-2xl font-display font-extrabold text-rose-400 mt-1">1.42 TFLOPs²/s</div>
+                    <div class="text-[10px] font-mono text-rose-300 mt-0.5"><i class="fa-solid fa-fire"></i> High
+                        Innovation Surge</div>
+                </div>
+                <div
+                    class="w-10 h-10 rounded-lg bg-rose-950/80 border border-rose-500/40 flex items-center justify-center text-rose-400">
+                    <i class="fa-solid fa-gauge-high text-lg"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Workspace Split -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+            <!-- Left Side: Radar Map & Analytics (7 cols) -->
+            <div class="lg:col-span-7 space-y-6">
+
+                <!-- Interactive Radar Globe Map -->
+                <div class="glass-panel rounded-2xl p-5 border border-slate-800 space-y-4 radar-container">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-globe text-cyan-400"></i>
+                            <h2 class="font-display font-bold text-white text-base">Global Breakthrough Hotspot Radar
+                            </h2>
+                        </div>
+                        <span
+                            class="text-[10px] font-mono px-2 py-0.5 bg-cyan-950 border border-cyan-500/30 text-cyan-300 rounded">Interactive
+                            Nodes</span>
+                    </div>
+
+                    <!-- Canvas Map Container -->
+                    <div
+                        class="relative w-full h-[320px] bg-slate-950/90 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
+                        <div class="radar-sweep-beam"></div>
+                        <canvas id="radar-map-canvas" class="w-full h-full cursor-pointer relative z-10"></canvas>
+
+                        <!-- Map Legend Overlay -->
+                        <div
+                            class="absolute bottom-3 left-3 z-20 glass-panel px-3 py-1.5 rounded-lg border border-slate-800 text-[10px] font-mono flex items-center space-x-3 text-slate-300">
+                            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                                LLM/AGI</span>
+                            <span class="flex items-center gap-1"><span
+                                    class="w-2 h-2 rounded-full bg-emerald-400"></span> Biotech</span>
+                            <span class="flex items-center gap-1"><span
+                                    class="w-2 h-2 rounded-full bg-purple-400"></span> Quantum</span>
+                            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-400"></span>
+                                Robotics</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Domain Analytics Chart -->
+                <div class="glass-panel rounded-2xl p-5 border border-slate-800 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-display font-bold text-white text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-purple-400"></i>
+                            <span>Breakthrough Volume by Domain (Hourly Spread)</span>
+                        </h3>
+                        <span class="text-xs font-mono text-slate-400">Updated Hourly</span>
+                    </div>
+                    <div class="h-56 w-full">
+                        <canvas id="chart-domains"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Side: Live Feed Stream & Filter Controls (5 cols) -->
+            <div class="lg:col-span-5 space-y-6">
+
+                <div class="glass-panel rounded-2xl p-5 border border-slate-800 space-y-4 flex flex-col h-[700px]">
+
+                    <!-- Feed Header & Filter Bar -->
+                    <div class="space-y-3 border-b border-slate-800 pb-4">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center space-x-2">
+                                <i class="fa-solid fa-rss text-emerald-400 animate-pulse"></i>
+                                <h2 class="font-display font-bold text-white text-base">Live Breakthrough Stream</h2>
+                            </div>
+                            <span
+                                class="text-xs font-mono text-cyan-400 bg-cyan-950/80 px-2.5 py-1 rounded-full border border-cyan-500/30"
+                                id="live-feed-counter">2 Items</span>
+                        </div>
+
+                        <!-- Category Filter Pills -->
+                        <div class="flex items-center space-x-1.5 overflow-x-auto pb-1 text-[11px] font-mono">
+                            <button onclick="filterFeed('all', this)"
+                                class="filter-btn active px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 transition">All</button>
+                            <button onclick="filterFeed('LLM / AGI', this)"
+                                class="filter-btn px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 transition">LLM/AGI</button>
+                            <button onclick="filterFeed('Biotech / Science', this)"
+                                class="filter-btn px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 transition">Biotech</button>
+                            <button onclick="filterFeed('Robotics / Hardware', this)"
+                                class="filter-btn px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 transition">Robotics</button>
+                            <button onclick="filterFeed('Quantum AI', this)"
+                                class="filter-btn px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 transition">Quantum</button>
+                        </div>
+                    </div>
+
+                    <!-- Feed Scrollable List -->
+                    <div class="flex-grow overflow-y-auto space-y-3 pr-1" id="breakthrough-feed">
+                        <!-- Dynamic Feed Items Inserted Here -->
+                    </div>
+
+                    <!-- Feed Footer Info -->
+                    <div
+                        class="pt-3 border-t border-slate-800/80 flex justify-between items-center text-[11px] font-mono text-slate-400">
+                        <span id="live-sync-status"><i class="fa-solid fa-circle-notch fa-spin text-cyan-400 mr-1"></i>
+                            Auto-Syncing with Live Web</span>
+                        <span class="text-cyan-400 hover:underline cursor-pointer"
+                            onclick="simulateNewHourlyBreakthrough()">+ Simulate Hourly Drop</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Detail Drawer / Modal for Breakthrough Inspection -->
+    <div id="modal-detail"
+        class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div
+            class="glass-panel-glow rounded-2xl max-w-2xl w-full p-6 space-y-5 relative border border-cyan-500/40 animate-float">
+            <button onclick="closeModal()"
+                class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center text-slate-300">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="flex items-center space-x-2">
+                <span
+                    class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-500/30"
+                    id="modal-tag">LLM / AGI</span>
+                <span class="text-xs font-mono text-slate-400" id="modal-time">1 hour ago</span>
+            </div>
+
+            <h3 class="font-display text-2xl font-bold text-white" id="modal-title">Breakthrough Title</h3>
+
+            <div class="grid grid-cols-2 gap-3 text-xs font-mono bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <div><span class="text-slate-400">Research Entity:</span> <strong class="text-slate-200"
+                        id="modal-lab">Lab Name</strong></div>
+                <div><span class="text-slate-400">Origin Region:</span> <strong class="text-cyan-300"
+                        id="modal-region">Location</strong></div>
+                <div><span class="text-slate-400">AGI Impact Score:</span> <strong class="text-emerald-400"
+                        id="modal-score">9.4 / 10</strong></div>
+                <div><span class="text-slate-400">Verification Status:</span> <strong class="text-purple-300"
+                        id="modal-status">Peer Reviewed / Confirmed</strong></div>
+            </div>
+
+            <div class="space-y-2">
+                <h4 class="text-xs font-mono font-bold text-slate-300 uppercase">Core Technical Innovation</h4>
+                <p class="text-sm text-slate-300 leading-relaxed" id="modal-desc">
+                    Detailed analysis of the breakthrough will appear here.
+                </p>
+            </div>
+
+            <div
+                class="p-3 bg-cyan-950/40 rounded-xl border border-cyan-500/30 text-xs text-cyan-200 font-mono space-y-1">
+                <strong><i class="fa-solid fa-lightbulb text-amber-400 mr-1"></i> Industry &amp; Societal
+                    Significance:</strong>
+                <p id="modal-significance">Impact assessment description.</p>
+            </div>
+
+            <!-- Gemini AI Deep Impact Matrix Container -->
+            <div id="gemini-deep-analysis-box"
+                class="p-4 bg-purple-950/30 rounded-xl border border-purple-500/30 space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-mono font-bold text-purple-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-brain text-purple-400"></i>
+                        <span>GEMINI AI STRUCTURED IMPACT MATRIX</span>
+                    </span>
+                    <button onclick="requestGeminiDeepAnalysis()" id="btn-run-deep-analysis"
+                        class="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-[11px] font-mono font-bold transition">
+                        Run Gemini Deep Analysis
+                    </button>
+                </div>
+                <div id="gemini-deep-analysis-content" class="text-xs font-mono text-slate-400 hidden">
+                    <!-- Dynamic LLM JSON Structured Analysis Output -->
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center pt-3 border-t border-slate-800">
+                <div class="flex space-x-2">
+                    <button onclick="readModalWithTTS()"
+                        class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-mono text-cyan-300 flex items-center space-x-2">
+                        <i class="fa-solid fa-volume-high"></i>
+                        <span>Read Overview</span>
+                    </button>
+                    <a id="modal-source-link" href="#" target="_blank"
+                        class="px-4 py-2 rounded-xl bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/40 text-xs font-mono text-cyan-300 flex items-center space-x-2 hidden">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        <span>View Source Web Page</span>
+                    </a>
+                </div>
+                <button onclick="closeModal()"
+                    class="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold transition">
+                    Close Radar Card
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gemini Radar Assistant Modal -->
+    <div id="modal-agent"
+        class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="glass-panel-glow rounded-2xl max-w-2xl w-full p-6 space-y-4 relative border border-purple-500/40">
+            <button onclick="toggleAgentModal()"
+                class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center text-slate-300">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center text-white text-lg">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <div>
+                    <h3 class="font-display text-xl font-bold text-white">Ask Gemini Radar Agent</h3>
+                    <p class="text-xs text-slate-400 font-mono">Grounded live web research assistant powered by Gemini 3
+                        Flash</p>
+                </div>
+            </div>
+
+            <div id="agent-chat-history"
+                class="h-64 bg-slate-950 p-4 rounded-xl border border-slate-800 overflow-y-auto font-mono text-xs space-y-3">
+                <div class="p-3 bg-slate-900 rounded-lg text-slate-300 border border-slate-800">
+                    <span class="text-purple-400 font-bold block mb-1">Radar Agent AI:</span>
+                    Hello! Ask me anything about recent AI breakthroughs, GPU clusters, biological models, or frontier
+                    safety research worldwide.
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <input type="text" id="agent-input-query"
+                    placeholder="e.g. What are the latest developments in protein folding models?"
+                    class="flex-grow bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-purple-500 font-mono"
+                    onkeypress="if(event.key==='Enter') sendAgentQuery()">
+                <button onclick="sendAgentQuery()" id="btn-agent-send"
+                    class="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold font-mono transition">
+                    Ask AI
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gemini Predictive Horizon Modal -->
+    <div id="modal-predict"
+        class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="glass-panel-glow rounded-2xl max-w-2xl w-full p-6 space-y-4 relative border border-amber-500/40">
+            <button onclick="toggleForecastModal()"
+                class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center text-slate-300">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-600 flex items-center justify-center text-white text-lg">
+                    <i class="fa-solid fa-crystal-ball"></i>
+                </div>
+                <div>
+                    <h3 class="font-display text-xl font-bold text-white">Gemini 6-Month Horizon Predictor</h3>
+                    <p class="text-xs text-slate-400 font-mono">Predictive synthesis using structured LLM modeling</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2 font-mono text-xs">
+                <span class="text-slate-400">Select Domain:</span>
+                <select id="forecast-domain-select"
+                    class="bg-slate-950 border border-slate-800 text-amber-300 rounded-lg px-3 py-1.5 focus:outline-none">
+                    <option value="LLM / AGI">LLM / AGI</option>
+                    <option value="Biotech / Science">Biotech / Science</option>
+                    <option value="Robotics / Hardware">Robotics / Hardware</option>
+                    <option value="Quantum AI">Quantum AI</option>
+                </select>
+                <button onclick="generateHorizonForecast()" id="btn-run-forecast"
+                    class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg transition">
+                    Forecast
+                </button>
+            </div>
+
+            <div id="forecast-output-container"
+                class="h-64 bg-slate-950 p-4 rounded-xl border border-slate-800 overflow-y-auto font-mono text-xs space-y-3">
+                <div class="text-slate-500 text-center pt-20">Select a domain and click Forecast to generate structured
+                    AI predictions.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer
+        class="relative z-20 w-full px-6 py-4 glass-panel border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-slate-400 font-mono">
+        <div>GLOBAL AI RADAR ENGINE &copy; 2026 | HOURLY SYNTHESIS MONITOR</div>
+        <div class="flex items-center space-x-4">
+            <span class="text-emerald-400"><i class="fa-solid fa-circle text-[8px] mr-1"></i> Gemini Search
+                Grounded</span>
+            <span>Real-time Signal Verification</span>
+        </div>
+    </footer>
+
+    <script>
+        // Data Store for Breakthroughs
+        let breakthroughs = [
+            {
+                id: 1,
+                timeAgo: "22 min ago",
+                hourMark: "15:00 UTC",
+                title: "DeepMind Unveils AlphaFold-3 Next-Gen for Complex Biomolecular Assemblies",
+                category: "Biotech / Science",
+                region: "London, UK",
+                lab: "Google DeepMind",
+                score: "9.8 / 10",
+                color: "#10b981",
+                desc: "Researchers at DeepMind released a major iteration predicting interactions between DNA, RNA, proteins, and small molecule ligands with sub-angstrom accuracy.",
+                significance: "Reduces candidate molecule discovery from years to under 48 hours for targeted oncology therapies.",
+                lat: 51.5074,
+                lng: -0.1278,
+                sourceUrl: '#'
+            },
+            {
+                id: 2,
+                timeAgo: "1 hour ago",
+                hourMark: "14:00 UTC",
+                title: "OpenAI Announces Breakthrough Zero-Shot Reasoning Architecture",
+                category: "LLM / AGI",
+                region: "San Francisco, USA",
+                lab: "OpenAI",
+                score: "9.6 / 10",
+                color: "#00f2fe",
+                desc: "A scaling paradigm integrating real-time search into token generation, enabling models to self-correct complex mathematical proofs mid-stream.",
+                significance: "Demonstrates near-perfect accuracy on benchmark graduate-level competition problems.",
+                lat: 37.7749,
+                lng: -122.4194,
+                sourceUrl: '#'
+            }
+        ];
+
+        let activeFilter = 'all';
+        let chartInstance = null;
+        let speechSynth = window.speechSynthesis;
+        let selectedModalItem = null;
+        let countdownSeconds = 3600;
+
+        // REAL-TIME GEMINI LIVE WEB FETCH ENGINE (Grounded Search)
+        async function fetchLiveGeminiBreakthroughs(isAuto = false) {
+
+            const btn = document.getElementById("fetch-btn-label");
+            const icon = document.getElementById("refresh-icon");
+
+            if (btn) btn.innerText = "Fetching...";
+            if (icon) icon.classList.add("animate-spin");
+
+            try {
+
+                const response = await fetch("/api/news");
+
+                if (!response.ok) {
+                    throw new Error("Server Error");
+                }
+
+                const data = await response.json();
+
+                breakthroughs = data.map((item, index) => {
+
+                    let color = "#00f2fe";
+
+                    if (item.category.toLowerCase().includes("bio"))
+                        color = "#10b981";
+
+                    else if (item.category.toLowerCase().includes("robot"))
+                        color = "#ff007f";
+
+                    else if (item.category.toLowerCase().includes("quantum"))
+                        color = "#9d4edd";
+
+                    return {
+                        id: index + 1,
+
+                        title: item.title,
+                        lab: item.lab,
+                        category: item.category,
+                        region: item.region,
+                        score: item.score,
+
+                        desc: item.desc,
+                        significance: item.significance,
+
+                        timeAgo: "Just Now",
+                        hourMark: new Date().toLocaleTimeString(),
+
+                        color,
+
+                        lat: Math.random() * 120 - 60,
+                        lng: Math.random() * 300 - 150,
+
+                        sourceUrl: "#"
+                    };
+                });
+
+                renderFeed();
+
+                updateChart();
+
+                drawRadarMap();
+
+                alert("Latest news loaded!");
+
+            }
+            catch (err) {
+
+                console.error(err);
+
+                alert("Unable to fetch latest news.");
+
+            }
+            finally {
+
+                if (btn) btn.innerText = "Fetch Live Web Breakthroughs";
+                if (icon) icon.classList.remove("animate-spin");
+
+            }
+
+        }
+
+
+
+        // Live Feed Renderer
+        function renderFeed() {
+            const feedContainer = document.getElementById('breakthrough-feed');
+            const counter = document.getElementById('live-feed-counter');
+            if (!feedContainer) return;
+
+            const filtered = activeFilter === 'all'
+                ? breakthroughs
+                : breakthroughs.filter(b => b.category.toLowerCase().includes(activeFilter.toLowerCase()) || activeFilter.toLowerCase().includes(b.category.toLowerCase()));
+
+            if (counter) counter.innerText = `${filtered.length} Items`;
+
+            feedContainer.innerHTML = filtered.map(item => `
+                <div class="feed-item glass-panel p-4 rounded-xl border-l-4 cursor-pointer hover:bg-slate-900/60" style="border-left-color: ${item.color}" onclick="openDetailModal(${item.id})">
+                    <div class="flex justify-between items-start text-[10px] font-mono mb-1.5">
+                        <span class="px-2 py-0.5 rounded-md bg-slate-950 text-slate-300 border border-slate-800">${item.category}</span>
+                        <div class="flex items-center space-x-2 text-slate-400">
+                            <span><i class="fa-solid fa-location-dot text-cyan-400 mr-1"></i>${item.region}</span>
+                            <span>&bull;</span>
+                            <span class="text-emerald-400 font-bold">${item.timeAgo}</span>
+                        </div>
+                    </div>
+                    <h3 class="font-display font-bold text-sm text-white hover:text-cyan-300 transition line-clamp-2">${item.title}</h3>
+                    <div class="flex justify-between items-center mt-2.5 text-[11px] font-mono text-slate-400">
+                        <span class="text-purple-300"><i class="fa-solid fa-building-columns mr-1"></i>${item.lab}</span>
+                        <span class="text-cyan-300 font-bold bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30">AGI Index: ${item.score}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            const metricCount = document.getElementById('metric-count');
+            if (metricCount) metricCount.innerText = `${breakthroughs.length} Events`;
+        }
+
+        // Filter Feed with explicit target binding
+        function filterFeed(category, btnElem) {
+            activeFilter = category;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-cyan-500/20', 'text-cyan-300', 'border-cyan-500/40');
+                btn.classList.add('bg-slate-800', 'text-slate-400');
+            });
+            if (btnElem) {
+                btnElem.classList.remove('bg-slate-800', 'text-slate-400');
+                btnElem.classList.add('bg-cyan-500/20', 'text-cyan-300', 'border-cyan-500/40');
+            }
+            renderFeed();
+        }
+
+        function openDetailModal(id) {
+            selectedModalItem = breakthroughs.find(b => b.id === id);
+            if (!selectedModalItem) return;
+
+            document.getElementById('modal-title').innerText = selectedModalItem.title;
+            document.getElementById('modal-tag').innerText = selectedModalItem.category;
+            document.getElementById('modal-time').innerText = selectedModalItem.timeAgo;
+            document.getElementById('modal-lab').innerText = selectedModalItem.lab;
+            document.getElementById('modal-region').innerText = selectedModalItem.region;
+            document.getElementById('modal-score').innerText = selectedModalItem.score;
+            document.getElementById('modal-desc').innerText = selectedModalItem.desc;
+            document.getElementById('modal-significance').innerText = selectedModalItem.significance;
+
+            const sourceLink = document.getElementById('modal-source-link');
+            if (selectedModalItem.sourceUrl && selectedModalItem.sourceUrl !== '#') {
+                sourceLink.href = selectedModalItem.sourceUrl;
+                sourceLink.classList.remove('hidden');
+            } else {
+                sourceLink.classList.add('hidden');
+            }
+
+            document.getElementById('gemini-deep-analysis-content').classList.add('hidden');
+            document.getElementById('modal-detail').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-detail').classList.add('hidden');
+        }
+
+        function readModalWithTTS() {
+            if (!selectedModalItem || !speechSynth) return;
+            speechSynth.cancel();
+            const text = `${selectedModalItem.title}. Lab: ${selectedModalItem.lab}. ${selectedModalItem.desc}`;
+            const utterance = new SpeechSynthesisUtterance(text);
+            speechSynth.speak(utterance);
+        }
+
+        function startLiveTimers() {
+            setInterval(() => {
+                const now = new Date();
+                const utcStr = now.toUTCString().split(' ')[4] + ' UTC';
+                const clockEl = document.getElementById('utc-clock');
+                if (clockEl) clockEl.innerText = utcStr;
+
+                if (countdownSeconds > 0) {
+                    countdownSeconds--;
+                    const mins = Math.floor(countdownSeconds / 60).toString().padStart(2, '0');
+                    const secs = (countdownSeconds % 60).toString().padStart(2, '0');
+                    const cdEl = document.getElementById('countdown-timer');
+                    if (cdEl) cdEl.innerText = `${mins}:${secs}`;
+                } else {
+                    fetchLiveGeminiBreakthroughs(true);
+                }
+            }, 1000);
+        }
+
+        function toggleAgentModal() {
+            document.getElementById('modal-agent').classList.toggle('hidden');
+        }
+
+        async function sendAgentQuery() {
+            const input = document.getElementById('agent-input-query');
+            const query = input.value.trim();
+            if (!query) return;
+
+            const chatHistory = document.getElementById('agent-chat-history');
+            const btn = document.getElementById('btn-agent-send');
+
+            chatHistory.innerHTML += `
+                <div class="p-3 bg-purple-950/40 rounded-lg text-purple-200 border border-purple-500/30">
+                    <span class="text-white font-bold block mb-1">You:</span>
+                    ${query}
+                </div>
+            `;
+            input.value = '';
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            btn.disabled = true;
+            btn.innerText = "Analyzing...";
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: query }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: {
+                    parts: [{ text: "You are the Global AI Radar Intelligence Assistant. Provide clear summaries grounded in recent web findings about AI research, breakthroughs, hardware, or biotech." }]
+                }
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "Unable to retrieve grounding response.";
+
+                let sourcesHtml = '';
+                const attributions = result.candidates?.[0]?.groundingMetadata?.groundingAttributions;
+                if (attributions && attributions.length > 0) {
+                    const links = attributions.map(a => `<a href="${a.web?.uri}" target="_blank" class="underline text-cyan-400 hover:text-cyan-300 mr-2">${a.web?.title || 'Source'}</a>`).join('');
+                    sourcesHtml = `<div class="mt-2 pt-2 border-t border-slate-800 text-[10px] text-slate-400">Sources: ${links}</div>`;
+                }
+
+                chatHistory.innerHTML += `
+                    <div class="p-3 bg-slate-900 rounded-lg text-slate-300 border border-slate-800">
+                        <span class="text-purple-400 font-bold block mb-1">Radar Agent AI:</span>
+                        <div>${text.replace(/\n/g, '<br>')}</div>
+                        ${sourcesHtml}
+                    </div>
+                `;
+            } catch (err) {
+                chatHistory.innerHTML += `
+                    <div class="p-3 bg-rose-950/60 rounded-lg text-rose-300 border border-rose-500/40">
+                        Error reaching Gemini API. Please try again.
+                    </div>
+                `;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Ask AI";
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            }
+
+        }
+
+
+        async function requestGeminiDeepAnalysis() {
+            if (!selectedModalItem) return;
+
+            const box = document.getElementById('gemini-deep-analysis-content');
+            const btn = document.getElementById('btn-run-deep-analysis');
+
+            box.classList.remove('hidden');
+            box.innerHTML = `<div class="text-purple-300 animate-pulse"><i class="fa-solid fa-gear fa-spin mr-2"></i>Generating structured impact matrix with Gemini 3 Flash...</div>`;
+            btn.disabled = true;
+
+            const prompt = `Analyze this breakthrough: Title: "${selectedModalItem.title}". Lab: "${selectedModalItem.lab}". Category: "${selectedModalItem.category}". Description: "${selectedModalItem.desc}".`;
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            technicalNoveltyScore: { type: "STRING" },
+                            economicDisruptionLevel: { type: "STRING" },
+                            societalRiskRating: { type: "STRING" },
+                            keyGuardrailsNeeded: { type: "ARRAY", items: { type: "STRING" } },
+                            fiveYearOutlook: { type: "STRING" }
+                        },
+                        required: ["technicalNoveltyScore", "economicDisruptionLevel", "societalRiskRating", "keyGuardrailsNeeded", "fiveYearOutlook"]
+                    }
+                },
+                systemInstruction: {
+                    parts: [{ text: "Act as a senior AI ethics & technical risk auditor. Provide rigorous JSON structured metrics." }]
+                }
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (jsonText) {
+                    const data = JSON.parse(jsonText);
+                    box.innerHTML = `
+                        <div class="grid grid-cols-3 gap-2 my-2 text-[11px]">
+                            <div class="p-2 bg-slate-900 rounded border border-slate-800"><span class="text-slate-400 block">Novelty:</span> <strong class="text-cyan-400">${data.technicalNoveltyScore}</strong></div>
+                            <div class="p-2 bg-slate-900 rounded border border-slate-800"><span class="text-slate-400 block">Disruption:</span> <strong class="text-amber-400">${data.economicDisruptionLevel}</strong></div>
+                            <div class="p-2 bg-slate-900 rounded border border-slate-800"><span class="text-slate-400 block">Risk Level:</span> <strong class="text-rose-400">${data.societalRiskRating}</strong></div>
+                        </div>
+                        <div class="mt-2">
+                            <span class="text-purple-300 font-bold block">Recommended Guardrails:</span>
+                            <ul class="list-disc pl-4 text-slate-300 space-y-1 mt-1">
+                                ${data.keyGuardrailsNeeded.map(g => `<li>${g}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div class="mt-2 text-slate-300">
+                            <span class="text-purple-300 font-bold block">5-Year Outlook:</span>
+                            <p>${data.fiveYearOutlook}</p>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                box.innerHTML = `<span class="text-rose-400">Failed to generate structured matrix.</span>`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function generateGeminiStudioBrief() {
+            const btnLabel = document.getElementById('studio-tts-label');
+            const icon = document.getElementById('studio-tts-icon');
+
+            btnLabel.innerText = "Generating Studio Audio...";
+            icon.className = "fa-solid fa-spinner animate-spin text-emerald-400";
+
+            const briefingText = `Say in a professional broadcast voice: Global AI Radar Executive Synthesis. Headline event: ${breakthroughs[0].title}. Research conducted at ${breakthroughs[0].lab} in ${breakthroughs[0].region}. Scientific significance score is ${breakthroughs[0].score}.`;
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: briefingText }] }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: "Puck" }
+                        }
+                    }
+                }
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
+
+                if (audioData && mimeType) {
+                    const sampleRateMatch = mimeType.match(/rate=(\d+)/);
+                    const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1], 10) : 24000;
+
+                    const pcmBuffer = base64ToArrayBuffer(audioData);
+                    const pcm16 = new Int16Array(pcmBuffer);
+                    const wavBlob = pcmToWav(pcm16, sampleRate);
+                    const audioUrl = URL.createObjectURL(wavBlob);
+
+                    const audio = new Audio(audioUrl);
+                    btnLabel.innerText = "Playing Studio Brief...";
+                    icon.className = "fa-solid fa-volume-high text-emerald-400 animate-pulse";
+
+                    audio.onended = () => {
+                        btnLabel.innerText = "Gemini Studio Voice";
+                        icon.className = "fa-solid fa-wand-magic-sparkles text-emerald-400";
+                    };
+
+                    audio.play();
+                } else {
+                    throw new Error("No audio payload");
+                }
+            } catch (err) {
+                toggleGlobalAudio();
+                btnLabel.innerText = "Gemini Studio Voice";
+                icon.className = "fa-solid fa-wand-magic-sparkles text-emerald-400";
+            }
+        }
+
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        function pcmToWav(pcm16, sampleRate = 24000) {
+            const buffer = new ArrayBuffer(44 + pcm16.length * 2);
+            const view = new DataView(buffer);
+
+            const writeString = (v, offset, str) => {
+                for (let i = 0; i < str.length; i++) v.setUint8(offset + i, str.charCodeAt(i));
+            };
+
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + pcm16.length * 2, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(view, 36, 'data');
+            view.setUint32(40, pcm16.length * 2, true);
+
+            let offset = 44;
+            for (let i = 0; i < pcm16.length; i++, offset += 2) {
+                view.setInt16(offset, pcm16[i], true);
+            }
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+        function toggleForecastModal() {
+            document.getElementById('modal-predict').classList.toggle('hidden');
+        }
+
+        async function generateHorizonForecast() {
+            const domain = document.getElementById('forecast-domain-select').value;
+            const container = document.getElementById('forecast-output-container');
+            const btn = document.getElementById('btn-run-forecast');
+
+            container.innerHTML = `<div class="text-amber-400 animate-pulse text-center pt-20"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Synthesizing 6-month predictions with Gemini 3 Flash...</div>`;
+            btn.disabled = true;
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: `Predict 3 major realistic scientific or technical breakthroughs in the field of "${domain}" expected in the next 6 to 12 months.` }] }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                milestoneTitle: { type: "STRING" },
+                                estimatedTimeframe: { type: "STRING" },
+                                probabilityScore: { type: "STRING" },
+                                expectedImpact: { type: "STRING" }
+                            },
+                            required: ["milestoneTitle", "estimatedTimeframe", "probabilityScore", "expectedImpact"]
+                        }
+                    }
+                }
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (jsonText) {
+                    const predictions = JSON.parse(jsonText);
+                    container.innerHTML = predictions.map((p, idx) => `
+                        <div class="p-3 bg-slate-900 rounded-lg border border-amber-500/30 space-y-1">
+                            <div class="flex justify-between items-center text-amber-300 font-bold">
+                                <span>#${idx + 1}: ${p.milestoneTitle}</span>
+                                <span class="text-[10px] bg-amber-950 px-2 py-0.5 rounded border border-amber-500/40">${p.probabilityScore} Likelihood</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400">Target Timeframe: ${p.estimatedTimeframe}</div>
+                            <div class="text-slate-300 text-xs">${p.expectedImpact}</div>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                container.innerHTML = `<div class="text-rose-400 text-center pt-20">Unable to generate horizon prediction.</div>`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function simulateNewHourlyBreakthrough() {
+            const sampleSims = [
+                {
+                    title: "MIT & Harvard AI Lab Constructs Generative Genome Sequence Architecture",
+                    category: "Biotech / Science",
+                    region: "Boston, USA",
+                    lab: "Broad Institute",
+                    score: "9.4 / 10",
+                    color: "#10b981",
+                    desc: "A transformer trained on 500 million species genomes synthesized synthetic DNA strands capable of producing bio-degradable polymers.",
+                    significance: "Accelerates sustainable bio-manufacturing using generative biology.",
+                    lat: 42.3601,
+                    lng: -71.0589,
+                    sourceUrl: '#'
+                }
+            ];
+
+            const picked = sampleSims[Math.floor(Math.random() * sampleSims.length)];
+            const newItem = {
+                ...picked,
+                id: Date.now(),
+                timeAgo: "1 min ago",
+                hourMark: "Live Sync"
+            };
+
+            breakthroughs.unshift(newItem);
+            renderFeed();
+            updateChart();
+            drawRadarMap();
+        }
+
+        function toggleGlobalAudio() {
+            if (!speechSynth) return;
+            if (speechSynth.speaking) {
+                speechSynth.cancel();
+                document.getElementById('audio-label').innerText = "Voice Brief";
+            } else {
+                const summary = `Global AI Radar briefing. In the past 24 hours, ${breakthroughs.length} major breakthroughs were recorded. Top headline: ${breakthroughs[0].title}.`;
+                const utterance = new SpeechSynthesisUtterance(summary);
+                document.getElementById('audio-label').innerText = "Speaking...";
+                utterance.onend = () => {
+                    document.getElementById('audio-label').innerText = "Voice Brief";
+                };
+                speechSynth.speak(utterance);
+            }
+        }
+
+        function drawRadarMap() {
+            const canvas = document.getElementById('radar-map-canvas');
+            if (!canvas || !canvas.parentElement) return;
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = canvas.parentElement.clientWidth || 600;
+            canvas.height = canvas.parentElement.clientHeight || 320;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvas.width; x += 40) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            breakthroughs.forEach(b => {
+                const x = ((b.lng + 180) / 360) * canvas.width;
+                const y = ((90 - b.lat) / 180) * canvas.height;
+
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, Math.PI * 2);
+                ctx.fillStyle = b.color;
+                ctx.shadowColor = b.color;
+                ctx.shadowBlur = 12;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                ctx.beginPath();
+                ctx.arc(x, y, 12, 0, Math.PI * 2);
+                ctx.strokeStyle = b.color + '66';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '10px JetBrains Mono';
+                ctx.fillText(b.region.split(',')[0], x + 10, y + 3);
+            });
+        }
+
+        function initChart() {
+            const canvasEl = document.getElementById('chart-domains');
+            if (!canvasEl || typeof Chart === 'undefined') return;
+            const ctx = canvasEl.getContext('2d');
+
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: getChartData(),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+                        y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8', font: { size: 10 }, stepSize: 1 } }
+                    }
+                }
+            });
+        }
+
+        function getChartData() {
+            const counts = { 'LLM / AGI': 0, 'Biotech / Science': 0, 'Robotics / Hardware': 0, 'Quantum AI': 0 };
+            breakthroughs.forEach(b => {
+
+                const c = b.category.toLowerCase();
+
+                if (c.includes("language"))
+                    counts["LLM / AGI"]++;
+
+                else if (c.includes("bio"))
+                    counts["Biotech / Science"]++;
+
+                else if (c.includes("robot"))
+                    counts["Robotics / Hardware"]++;
+
+                else
+                    counts["Quantum AI"]++;
+
+            });
+            return {
+                labels: ['LLM / AGI', 'Biotech', 'Robotics', 'Quantum AI'],
+                datasets: [{
+                    data: [counts['LLM / AGI'], counts['Biotech / Science'], counts['Robotics / Hardware'], counts['Quantum AI']],
+                    backgroundColor: ['#00f2fe', '#10b981', '#ff007f', '#9d4edd'],
+                    borderRadius: 8
+                }]
+            };
+        }
+
+        function updateChart() {
+            if (chartInstance) {
+                chartInstance.data = getChartData();
+                chartInstance.update();
+            } else {
+                initChart();
+            }
+        }
+
+        function initBackgroundCanvas() {
+            const canvas = document.getElementById('bg-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            let w = canvas.width = window.innerWidth;
+            let h = canvas.height = window.innerHeight;
+
+            window.addEventListener('resize', () => {
+                w = canvas.width = window.innerWidth;
+                h = canvas.height = window.innerHeight;
+            });
+
+            const particles = Array.from({ length: 45 }, () => ({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: (Math.random() - 0.5) * 0.5,
+                r: Math.random() * 2 + 1
+            }));
+
+            function animate() {
+                ctx.clearRect(0, 0, w, h);
+                particles.forEach(p => {
+                    p.x += p.vx; p.y += p.vy;
+                    if (p.x < 0 || p.x > w) p.vx *= -1;
+                    if (p.y < 0 || p.y > h) p.vy *= -1;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(0, 242, 254, 0.4)';
+                    ctx.fill();
+                });
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        // Preview-Safe App Initialization
+        function startApp() {
+            initBackgroundCanvas();
+            renderFeed();
+            initChart();
+            drawRadarMap();
+            startLiveTimers();
+            fetchLiveGeminiBreakthroughs(true);
+
+            window.addEventListener('resize', drawRadarMap);
+        }
+
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            setTimeout(startApp, 100);
+        } else {
+            document.addEventListener('DOMContentLoaded', startApp);
+        }
+    </script>
+</body>
+
+</html>
