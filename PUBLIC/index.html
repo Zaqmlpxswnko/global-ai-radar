@@ -362,6 +362,8 @@
                 <!-- Domain Analytics Chart -->
                 <div class="glass-panel rounded-2xl p-5 border border-slate-800 space-y-4">
                     <div class="flex justify-between items-center">
+                        ${item.image ? `
+
                         <h3 class="font-display font-bold text-white text-sm flex items-center gap-2">
                             <i class="fa-solid fa-chart-pie text-purple-400"></i>
                             <span>Breakthrough Volume by Domain (Hourly Spread)</span>
@@ -668,9 +670,10 @@
                 }
 
                 const data = await response.json();
+                console.log("News from API:", data);
 
                 breakthroughs = data.map((item, index) => {
-
+                console.log("Image URL:", item.image);
                     let color = "#00f2fe";
 
                     if (item.category.toLowerCase().includes("bio"))
@@ -693,7 +696,8 @@
 
                         desc: item.desc,
                         significance: item.significance,
-
+                        image: item.image,
+                        sourceUrl: item.link, 
                         timeAgo: "Just Now",
                         hourMark: new Date().toLocaleTimeString(),
 
@@ -702,7 +706,7 @@
                         lat: Math.random() * 120 - 60,
                         lng: Math.random() * 300 - 150,
 
-                        sourceUrl: "#"
+                        sourceUrl: item.link
                     };
                 });
 
@@ -745,23 +749,47 @@
 
             if (counter) counter.innerText = `${filtered.length} Items`;
 
-            feedContainer.innerHTML = filtered.map(item => `
-                <div class="feed-item glass-panel p-4 rounded-xl border-l-4 cursor-pointer hover:bg-slate-900/60" style="border-left-color: ${item.color}" onclick="openDetailModal(${item.id})">
-                    <div class="flex justify-between items-start text-[10px] font-mono mb-1.5">
-                        <span class="px-2 py-0.5 rounded-md bg-slate-950 text-slate-300 border border-slate-800">${item.category}</span>
-                        <div class="flex items-center space-x-2 text-slate-400">
-                            <span><i class="fa-solid fa-location-dot text-cyan-400 mr-1"></i>${item.region}</span>
-                            <span>&bull;</span>
-                            <span class="text-emerald-400 font-bold">${item.timeAgo}</span>
-                        </div>
-                    </div>
-                    <h3 class="font-display font-bold text-sm text-white hover:text-cyan-300 transition line-clamp-2">${item.title}</h3>
-                    <div class="flex justify-between items-center mt-2.5 text-[11px] font-mono text-slate-400">
-                        <span class="text-purple-300"><i class="fa-solid fa-building-columns mr-1"></i>${item.lab}</span>
-                        <span class="text-cyan-300 font-bold bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30">AGI Index: ${item.score}</span>
-                    </div>
-                </div>
-            `).join('');
+             feedContainer.innerHTML = filtered.map(item => `
+    <div class="feed-item glass-panel p-4 rounded-xl border-l-4 cursor-pointer hover:bg-slate-900/60"
+         style="border-left-color: ${item.color}"
+         onclick="openDetailModal(${item.id})">
+
+        <div class="flex justify-between items-start text-[10px] font-mono mb-1.5">
+            <span class="px-2 py-0.5 rounded-md bg-slate-950 text-slate-300 border border-slate-800">
+                ${item.category}
+            </span>
+
+            <div class="flex items-center space-x-2 text-slate-400">
+                <span><i class="fa-solid fa-location-dot text-cyan-400 mr-1"></i>${item.region}</span>
+                <span>&bull;</span>
+                <span class="text-emerald-400 font-bold">${item.timeAgo}</span>
+            </div>
+        </div>
+
+        ${item.image ? `
+        <img
+            src="${item.image}"
+            alt="${item.title}"
+            class="w-full h-48 object-cover rounded-lg mb-3"
+        >
+        ` : ""}
+
+        <h3 class="font-display font-bold text-sm text-white hover:text-cyan-300 transition line-clamp-2">
+            ${item.title}
+        </h3>
+
+        <div class="flex justify-between items-center mt-2.5 text-[11px] font-mono text-slate-400">
+            <span class="text-purple-300">
+                <i class="fa-solid fa-building-columns mr-1"></i>${item.lab}
+            </span>
+
+            <span class="text-cyan-300 font-bold bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30">
+                AGI Index: ${item.score}
+            </span>
+        </div>
+
+    </div>
+`).join('');
 
             const metricCount = document.getElementById('metric-count');
             if (metricCount) metricCount.innerText = `${breakthroughs.length} Events`;
