@@ -90,7 +90,7 @@ const completion = await groq.chat.completions.create({
     text = text.replace(/```json|```/g, "").trim();
 
 const aiNews = JSON.parse(text);
-
+console.log(aiNews);
     text = text.replace(/```json|```/g, "").trim();
 
    const finalNews = aiNews.map((item, index) => ({
