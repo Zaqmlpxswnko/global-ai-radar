@@ -115,3 +115,17 @@ fs.writeFileSync(
   path.join(__dirname, "../PUBLIC/top5.json"),
   JSON.stringify(top5, null, 2)
 );
+console.log("News cache updated.");
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// Run immediately
+updateNews();
+
+// Then every 30 minutes
+cron.schedule("*/30 * * * *", updateNews);
+
+module.exports = { updateNews };
