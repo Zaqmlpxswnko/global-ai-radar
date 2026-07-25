@@ -749,7 +749,7 @@
 
             if (counter) counter.innerText = `${filtered.length} Items`;
 
-             feedContainer.innerHTML = filtered.map(item => `
+            feedContainer.innerHTML = filtered.map(item => ` 
     <div class="feed-item glass-panel p-4 rounded-xl border-l-4 cursor-pointer hover:bg-slate-900/60"
          style="border-left-color: ${item.color}"
          onclick="openDetailModal(${item.id})">

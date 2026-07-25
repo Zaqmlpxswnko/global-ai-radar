@@ -98,22 +98,20 @@ const aiNews = JSON.parse(text);
   image: articles[index]?.image || "",
   link: articles[index]?.link || ""
 }));
+
+// Create Top 5 highest-scoring stories
+const top5 = [...finalNews]
+  .sort((a, b) => b.score - a.score)
+  .slice(0, 5);
+
+// Save all news
 fs.writeFileSync(
   NEWS_FILE,
   JSON.stringify(finalNews, null, 2)
 );
 
-    console.log("News cache updated.");
-
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-// Run immediately
-updateNews();
-
-// Then every 30 minutes
-cron.schedule("*/30 * * * *", updateNews);
-
-module.exports = { updateNews };
+// Save Top 5 news
+fs.writeFileSync(
+  path.join(__dirname, "../PUBLIC/top5.json"),
+  JSON.stringify(top5, null, 2)
+);
