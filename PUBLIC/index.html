@@ -663,7 +663,9 @@
 
             try {
 
-                const response = await fetch("/api/news");
+                const response = await fetch("/api/news/refresh", {
+    method: "POST"
+});
 
                 if (!response.ok) {
                     throw new Error("Server Error");
