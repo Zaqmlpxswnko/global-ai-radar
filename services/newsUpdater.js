@@ -1,8 +1,10 @@
+require("dotenv").config();
+const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 const cron = require("node-cron");
 const Parser = require("rss-parser");
-const axios = require("axios");
+
 
 const parser = new Parser();
 
@@ -15,8 +17,7 @@ const NEWS_FILE = path.join(__dirname, "../PUBLIC/news.json");
 const feeds = [
   "https://huggingface.co/blog/feed.xml",
   "https://techcrunch.com/category/artificial-intelligence/feed/",
-  "https://venturebeat.com/category/ai/feed/",
-  "https://blog.google/technology/ai/rss/",
+  "https://openai.com/news/rss.xml",
 ];
 
 async function updateNews() {
@@ -25,10 +26,12 @@ console.log("Updating AI news...");
 
   try {
     let articles = [];
+    let aiNews = [];
 
     for (const feed of feeds) {
       try {
         const rss = await parser.parseURL(feed);
+        console.log(`${rss.title}: ${rss.items.length} articles found`);
 console.log(JSON.stringify(rss.items[0], null, 2));
         rss.items.slice(0, 2).forEach(item => {
          articles.push({
@@ -74,38 +77,53 @@ Articles:
 
 ${JSON.stringify(articles)}
 `;
-console.log("Calling Ollama...");
-let aiNews;
+console.log("Calling OpenRouter...");
+
+
 try {
-  const response = await axios.post(
-    "http://127.0.0.1:11434/api/generate",
+    const response = await axios.post(
+    "https://openrouter.ai/api/v1/chat/completions",
     {
-      model: "qwen2.5:3b",
-      prompt: prompt,
-      stream: false
+        model: "openrouter/free",
+        messages: [
+            {
+                role: "user",
+                content: prompt
+            }
+        ]
     },
     {
-      timeout: 300000
+        headers: {
+            Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json"
+        },
+        timeout: 300000
     }
-  );
+);
 
-  console.log("Ollama finished.");
-console.dir(response.data, { depth: null });
+    console.log("OpenRouter finished.");
 
-let text = response.data.response;
-text = text.replace(/```json|```/g, "").trim();
+   const text = response.data.choices[0].message.content
+    .replace(/```json/g, "")
+    .replace(/```/g, "")
+    .trim();
 
- aiNews = JSON.parse(text);
+aiNews = JSON.parse(text);
 
 console.log(aiNews);
 
 } catch (err) {
-  console.error("OLLAMA ERROR");
-  console.error(err.message);
-  console.error(err.code);
-  console.error(err.response?.data);
-  return;
+    console.error("OPENROUTER ERROR");
+    console.error(err.message);
+
+    if (err.response) {
+        console.error(err.response.data);
+    }
+
+    return;
 }
+
+
 console.log(aiNews);
   
 
