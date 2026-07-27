@@ -15,7 +15,8 @@ const NEWS_FILE = path.join(__dirname, "../PUBLIC/news.json");
 const feeds = [
   "https://huggingface.co/blog/feed.xml",
   "https://techcrunch.com/category/artificial-intelligence/feed/",
-  "https://venturebeat.com/category/ai/feed/"
+  "https://venturebeat.com/category/ai/feed/",
+  "https://blog.google/technology/ai/rss/",
 ];
 
 async function updateNews() {
