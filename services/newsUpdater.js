@@ -2,15 +2,13 @@ const fs = require("fs");
 const path = require("path");
 const cron = require("node-cron");
 const Parser = require("rss-parser");
-const Groq = require("groq-sdk");
+const axios = require("axios");
 
 const parser = new Parser();
 
 
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});   
+
 
 const NEWS_FILE = path.join(__dirname, "../PUBLIC/news.json");
 
@@ -21,7 +19,8 @@ const feeds = [
 ];
 
 async function updateNews() {
-  console.log("Updating AI news...");
+  console.log("=== NEW VERSION ===");
+console.log("Updating AI news...");
 
   try {
     let articles = [];
@@ -34,7 +33,7 @@ console.log(JSON.stringify(rss.items[0], null, 2));
          articles.push({
     id: articles.length,
     title: item.title,
-    description: (item.contentSnippet || item.content || "").slice(0, 200),
+    description: (item.contentSnippet || "").slice(0, 80),
     source: rss.title,
     link: item.link,
     image:
@@ -74,24 +73,40 @@ Articles:
 
 ${JSON.stringify(articles)}
 `;
-const completion = await groq.chat.completions.create({
-  model: "llama-3.3-70b-versatile",
-  messages: [
+console.log("Calling Ollama...");
+let aiNews;
+try {
+  const response = await axios.post(
+    "http://127.0.0.1:11434/api/generate",
     {
-      role: "user",
-      content: prompt
+      model: "qwen2.5:3b",
+      prompt: prompt,
+      stream: false
+    },
+    {
+      timeout: 300000
     }
-  ],
-  temperature: 0.2
-});
+  );
 
+  console.log("Ollama finished.");
+console.dir(response.data, { depth: null });
 
-    let text = completion.choices[0].message.content;
-    text = text.replace(/```json|```/g, "").trim();
+let text = response.data.response;
+text = text.replace(/```json|```/g, "").trim();
 
-const aiNews = JSON.parse(text);
+ aiNews = JSON.parse(text);
+
 console.log(aiNews);
-    text = text.replace(/```json|```/g, "").trim();
+
+} catch (err) {
+  console.error("OLLAMA ERROR");
+  console.error(err.message);
+  console.error(err.code);
+  console.error(err.response?.data);
+  return;
+}
+console.log(aiNews);
+  
 
    const finalNews = aiNews.map((item, index) => ({
   ...item,
