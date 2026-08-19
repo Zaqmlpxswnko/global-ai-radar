@@ -1,57 +1,57 @@
 [
   {
-    "title": "NVIDIA Cosmos-H-Dreams: Bringing Real-Time Generative Simulation to Surgical Robotics",
-    "lab": "NVIDIA",
-    "category": "Robotics/Simulation",
-    "region": "Global",
-    "score": "High",
-    "desc": "Introduction of Cosmos-H-Dreams, a framework for real-time generative simulation designed specifically to enhance surgical robotics training and operation.",
-    "significance": "Advances the intersection of generative AI and precision medical robotics.",
-    "image": "",
-    "link": "https://huggingface.co/blog/nvidia/cosmos-h-dreams"
-  },
-  {
-    "title": "Bringing Nunchaku 4-bit Diffusion Inference to Diffusers",
+    "title": "How Much Memory Does Your Agent Actually Need?",
     "lab": "Hugging Face",
-    "category": "Inference Optimization",
+    "category": "AI Research",
     "region": "Global",
-    "score": "Medium",
-    "desc": "Integration of Nunchaku 4-bit quantization techniques into the Diffusers library to enable faster and more efficient diffusion model inference.",
-    "significance": "Improves efficiency and accessibility of running large diffusion models on consumer hardware.",
+    "score": "N/A",
+    "desc": "Discusses memory requirements for AI agents.",
+    "significance": "Moderate impact on AI development efficiency.",
     "image": "",
-    "link": "https://huggingface.co/blog/nunchaku-diffusers"
+    "link": "https://huggingface.co/blog/ibm-research/altk-evolve-hmm"
   },
   {
-    "title": "Google’s AI search is rapidly becoming the default, new data shows",
-    "lab": "Google",
-    "category": "Search/Consumer AI",
+    "title": "Multi-Vector (Late Interaction) Embedding Models with Sentence Transformers",
+    "lab": "Hugging Face",
+    "category": "NLP",
     "region": "Global",
-    "score": "High",
-    "desc": "New data indicates that Google's AI Overviews now appear in 43% of searches, marking a major shift in how information is retrieved online.",
-    "significance": "Demonstrates the massive scale and rapid adoption of generative AI in mainstream search ecosystems.",
+    "score": "N/A",
+    "desc": "Introduces advanced embedding models for better sentence representations.",
+    "significance": "High potential for improving NLP tasks.",
     "image": "",
-    "link": "https://techcrunch.com/2026/07/27/googles-ai-search-is-rapidly-becoming-the-default-new-data-shows/"
+    "link": "https://huggingface.co/blog/multi-vector-encoder"
   },
   {
-    "title": "Power up your AI infrastructure! A first look at the Smart Systems Stage agenda at TechCrunch Disrupt 2026",
-    "lab": "TechCrunch",
-    "category": "Infrastructure/Events",
-    "region": "USA",
-    "score": "Low",
-    "desc": "Announcement of the Smart Systems Stage at TechCrunch Disrupt 2026, focusing on the energy and infrastructure needs of AI.",
-    "significance": "Highlights the growing industry focus on the physical and energy requirements of scaling AI.",
+    "title": "Cursor capitalizes on GitHub frustration, launches rival hosting platform",
+    "lab": "Cursor",
+    "category": "Technology",
+    "region": "North America",
+    "score": "N/A",
+    "desc": "Cursor introduces a competing code-hosting platform to GitHub.",
+    "significance": "High, as it challenges dominant platforms in the tech ecosystem.",
     "image": "",
-    "link": "https://techcrunch.com/2026/07/27/power-up-your-ai-infrastructure-a-first-look-at-the-smart-systems-stage-agenda-at-techcrunch-disrupt-2026/"
+    "link": "https://techcrunch.com/2026/08/18/cursor-capitalizes-on-github-frustration-launches-rival-hosting-platform/"
   },
   {
-    "title": "How AI is expanding what people do at work",
+    "title": "OpenAI institutes new safeguards after Hugging Face breach",
     "lab": "OpenAI",
-    "category": "Workforce/Labor Economics",
+    "category": "AI Security",
     "region": "Global",
-    "score": "Medium",
-    "desc": "New research from OpenAI examining how ChatGPT usage is expanding the scope of tasks and roles for modern workers.",
-    "significance": "Provides insight into the evolving relationship between generative AI and human productivity/job functions.",
+    "score": "N/A",
+    "desc": "OpenAI implements enhanced monitoring to prevent data breaches.",
+    "significance": "Critical for maintaining trust in AI systems.",
     "image": "",
-    "link": "https://openai.com/index/how-ai-is-expanding-what-people-do-at-work"
+    "link": "https://techcrunch.com/2026/08/18/openai-institutes-new-safeguards-after-hugging-face-breach/"
+  },
+  {
+    "title": "Strengthening democratic oversight in national security",
+    "lab": "OpenAI",
+    "category": "Ethics & Policy",
+    "region": "Global",
+    "score": "N/A",
+    "desc": "OpenAI initiates efforts to ensure AI aligns with democratic values.",
+    "significance": "High, addressing ethical use of AI in sensitive domains.",
+    "image": "",
+    "link": "https://openai.com/index/strengthening-democratic-oversight-in-national-security"
   }
 ]
