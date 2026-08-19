@@ -103,13 +103,30 @@ try {
 
     console.log("OpenRouter finished.");
 
-   const text = response.data.choices[0].message.content
-    .replace(/```json/g, "")
+   const rawText = response.data.choices[0].message.content;
+
+console.log("OPENROUTER RAW RESPONSE:");
+console.log(rawText);
+
+// Remove markdown code fences
+const cleanedText = rawText
+    .replace(/```json/gi, "")
     .replace(/```/g, "")
     .trim();
 
-aiNews = JSON.parse(text);
+// Find the actual JSON array
+const jsonStart = cleanedText.indexOf("[");
+const jsonEnd = cleanedText.lastIndexOf("]");
 
+if (jsonStart === -1 || jsonEnd === -1) {
+    throw new Error("OpenRouter did not return a valid JSON array.");
+}
+
+const jsonText = cleanedText.slice(jsonStart, jsonEnd + 1);
+
+aiNews = JSON.parse(jsonText);
+
+console.log("Parsed AI news successfully:");
 console.log(aiNews);
 
 } catch (err) {
